@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArithmeticCoding.cs" />
+    <Compile Include="BurrowsWheelerTransform.cs" />
     <Compile Include="Coder.cs" />
     <Compile Include="Decoder.cs" />
     <Compile Include="HuffmanCoding.cs" />

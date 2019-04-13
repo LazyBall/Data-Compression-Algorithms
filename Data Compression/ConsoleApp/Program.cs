@@ -8,20 +8,22 @@ namespace ConsoleApp
         static void Main()
         {
             var messsage = Console.ReadLine();
-            var huf2 = new HuffmanCoding(5);
-            var code=huf2.Encode(messsage);
-            var decode=huf2.Decode(code);
-            Console.WriteLine("Huffman");
-            Console.WriteLine(code);
-            Console.WriteLine(decode);
-            Console.WriteLine();
+            //var huf2 = new HuffmanCoding(5);
+            //var code=huf2.Encode(messsage);
+            //var decode=huf2.Decode(code);
+            //Console.WriteLine("Huffman");
+            //Console.WriteLine(code);
+            //Console.WriteLine(decode);
+            //Console.WriteLine();
 
-            Console.WriteLine("Arithmetic");
-            var ar = new ArithmeticCoding();
-            code=ar.Encode(messsage);
-            decode = ar.Decode(code);
-            Console.WriteLine(code);
-            Console.WriteLine(decode);
+            //Console.WriteLine("Arithmetic");
+            //var ar = new ArithmeticCoding();
+            //code=ar.Encode(messsage);
+            //decode = ar.Decode(code);
+            //Console.WriteLine(code);
+            //Console.WriteLine(decode);
+            var bw = new BurrowsWheelerTransform();
+            Console.WriteLine(bw.Encode(messsage));
         }
     }
 }
