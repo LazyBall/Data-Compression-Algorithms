@@ -8,7 +8,6 @@ namespace Data_Compression
     // http://trinary.ru/kb/d0085167-8832-466b-8cba-cc2e377e84c3
     public class HuffmanCoding : ICodingAlgorithm
     {
-        public IReadOnlyDictionary<char, string> CodeWords { get; private set; }
         private readonly int _numberSystem;
 
         public HuffmanCoding(int numberSystem)
@@ -17,7 +16,8 @@ namespace Data_Compression
             this._numberSystem = numberSystem;
         }
 
-        public IReadOnlyDictionary<char, string> CreateCodeWords(IReadOnlyDictionary<char, int> frequencyDictionary)
+        private IReadOnlyDictionary<char, string> CreateCodeWords(IReadOnlyDictionary<char, double> 
+            frequencyDictionary, int numberSystem)
         {
             var tree = new List<Node>(frequencyDictionary.Count);
 
@@ -27,21 +27,21 @@ namespace Data_Compression
             }
 
             int m = frequencyDictionary.Count;
-            if (m > _numberSystem)
+            if (m > numberSystem)
             {
 
-                while ((m - _numberSystem) % (_numberSystem - 1) != 0)
+                while ((m - numberSystem) % (numberSystem - 1) != 0)
                 {
                     m++;
                 }
 
             }
-            int start = _numberSystem - (m - frequencyDictionary.Count); //сколько нужно взять на первом шаге
+            int start = numberSystem - (m - frequencyDictionary.Count); //сколько нужно взять на первом шаге
 
             // первый шаг
             tree.Sort();
             var nodes = new List<Node>(start);
-            int sumNodes = 0;
+            var sumNodes = 0.0;
             while (tree.Count > 0 && nodes.Count != start)
             {
                 int last = tree.Count - 1;
@@ -56,10 +56,10 @@ namespace Data_Compression
             while (tree.Count > 1)
             {
                 tree.Sort();
-                var list = new List<Node>(_numberSystem);
-                int sum = 0;
+                var list = new List<Node>(numberSystem);
+                var sum = 0.0;
 
-                while (list.Count < _numberSystem)
+                while (list.Count < numberSystem)
                 {
                     int last = tree.Count - 1;
                     list.Add(tree[last]);
@@ -73,30 +73,24 @@ namespace Data_Compression
             return GetCodesWhenTraversing(tree[0]);
         }
 
-        public IReadOnlyDictionary<char, string> CreateCodeWords(string message)
+        private IReadOnlyDictionary<char, string> CreateCodeWords(string message, int numberSystem)
         {
-            var frequencyDictionary = GetFrequencyDictionary(message);
-            return CreateCodeWords(frequencyDictionary);
+            return CreateCodeWords(GetFrequencyDictionary(message), numberSystem);
         }
 
         public string Encode(string sourceText)
         {
-            CodeWords = CreateCodeWords(sourceText);
-            return Coder.GetCodedMessage(sourceText, CodeWords);
+            return Coder.GetCodedMessage(sourceText, CreateCodeWords(sourceText, _numberSystem), true);
         }
 
         public string Decode(string codedText)
         {
-            if (CodeWords == null)
-            {
-                throw new ArgumentException();
-            }
-            return Decoder.GetDecodedMessage(codedText, CodeWords);
+            return Decoder.GetDecodedMessage(codedText);
         }
 
-        private Dictionary<char, int> GetFrequencyDictionary(string message)
+        private IReadOnlyDictionary<char, double> GetFrequencyDictionary(string message)
         {
-            var frequencyDict = new Dictionary<char, int>();
+            var frequencyDict = new Dictionary<char, double>();
 
             foreach (char symbol in message)
             {
@@ -113,7 +107,7 @@ namespace Data_Compression
             return frequencyDict;
         }
 
-        private Dictionary<char, string> GetCodesWhenTraversing(Node node)
+        private IReadOnlyDictionary<char, string> GetCodesWhenTraversing(Node node)
         {
             Dictionary<char, string> codes = new Dictionary<char, string>(113);
             StringBuilder path = new StringBuilder(32);
@@ -141,13 +135,14 @@ namespace Data_Compression
         private class Node : IComparable<Node>
         {
             public char Symbol { get; private set; }
-            public int Value { get; private set; }
+            public double Value { get; private set; }
             public IReadOnlyList<Node> Childs { get; private set; }
-            public Node(char symbol, int value, List<Node> nodes)
+
+            public Node(char symbol, double value, List<Node> childs)
             {
                 this.Symbol = symbol;
                 this.Value = value;
-                Childs = nodes;
+                this.Childs = childs;
             }
 
             public int CompareTo(Node other)

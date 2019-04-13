@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
+using System;
 
 namespace Data_Compression
 {
-    public static class Decoder
+    static class Decoder
     {
+
         public static string GetDecodedMessage(string codedMessage, IReadOnlyDictionary<char, string> codeWords)
         {
             var words = new Dictionary<string, char>(codeWords.Count);
@@ -17,22 +20,47 @@ namespace Data_Compression
             return GetDecodedMessage(codedMessage, words);
         }
 
-        public static string GetDecodedMessage(string codedMessage, IReadOnlyDictionary<string, char> codeWords)
+        public static string GetDecodedMessage(string codedMessage, IReadOnlyDictionary<string, char> codeWords = null)
         {
-            var word = string.Empty;
+            if (codeWords == null) codeWords = GetCodeWords(codedMessage);
+            var word = new StringBuilder(32);
             var decodedMessage = new StringBuilder();
 
             foreach (char symbol in codedMessage)
             {
-                word += symbol;
-                if (codeWords.TryGetValue(word, out char decoded))
+                word.Append(symbol);
+                if (codeWords.TryGetValue(word.ToString(), out char decoded))
                 {
                     decodedMessage.Append(decoded);
-                    word = string.Empty;
+                    word.Clear();
                 }
             }
 
             return decodedMessage.ToString();
         }
+
+        static IReadOnlyDictionary<string, char> GetCodeWords(string codedMessage)
+        {
+            var patternAllCodes = @"\{(\[(.|\n)-[^\]]+\])+\}\z";
+            var patternOneCode = @"(.|\n)-[^\]]+";
+            var matchAllCodes = Regex.Match(codedMessage, patternAllCodes);
+            if (matchAllCodes.Success)
+            {
+                var dictionary = new Dictionary<string, char>();
+
+                foreach (Match matchCode in Regex.Matches(matchAllCodes.Value, patternOneCode))
+                {
+                    var code = matchCode.Value.Substring(2);
+                    dictionary.Add(code, matchCode.Value[0]);                    
+                }
+
+                return dictionary;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+        }
+
     }
 }
