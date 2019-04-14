@@ -43,8 +43,6 @@
   <ItemGroup>
     <Compile Include="ArithmeticCoding.cs" />
     <Compile Include="BWT.cs" />
-    <Compile Include="Coder.cs" />
-    <Compile Include="Decoder.cs" />
     <Compile Include="HuffmanCoding.cs" />
     <Compile Include="ITextEncodingAlgorithm.cs" />
     <Compile Include="LZ78.cs" />

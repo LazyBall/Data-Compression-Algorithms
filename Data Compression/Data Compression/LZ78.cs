@@ -5,6 +5,9 @@ using System.Text.RegularExpressions;
 
 namespace Data_Compression
 {
+    /// <summary>
+    /// LZ78
+    /// </summary>
     class LZ78 :ITextEncodingAlgorithm
     {
         public string Encode(string sourceText)
