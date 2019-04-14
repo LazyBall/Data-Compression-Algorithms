@@ -5,8 +5,11 @@ using System.Text;
 
 namespace Data_Compression
 {
+    /// <summary>
+    /// Burrows–Wheeler transform
+    /// </summary>
     //source https://neerc.ifmo.ru/wiki/index.php?title=Преобразование_Барроуза-Уилера#.D0.90.D0.BB.D0.B3.D0.BE.D1.80.D0.B8.D1.82.D0.BC_.D0.B7.D0.B0_.D0.BB.D0.B8.D0.BD.D0.B5.D0.B9.D0.BD.D0.BE.D0.B5_.D0.B2.D1.80.D0.B5.D0.BC.D1.8F
-    public class BurrowsWheelerTransform : ICodingAlgorithm
+    public class BWT : ITextEncodingAlgorithm
     {       
 
         public string Encode(string sourceText)

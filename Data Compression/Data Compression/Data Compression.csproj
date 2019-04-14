@@ -42,13 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArithmeticCoding.cs" />
-    <Compile Include="BurrowsWheelerTransform.cs" />
+    <Compile Include="BWT.cs" />
     <Compile Include="Coder.cs" />
     <Compile Include="Decoder.cs" />
     <Compile Include="HuffmanCoding.cs" />
-    <Compile Include="ICodingAlgorithm.cs" />
+    <Compile Include="ITextEncodingAlgorithm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RunLengthEncoding.cs" />
+    <Compile Include="RLE.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

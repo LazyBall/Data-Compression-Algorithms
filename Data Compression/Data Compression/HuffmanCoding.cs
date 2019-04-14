@@ -4,9 +4,12 @@ using System.Text;
 
 namespace Data_Compression
 {
+    /// <summary>
+    /// Huffman coding
+    /// </summary>
     // source http://neerc.ifmo.ru/wiki/index.php?title=Алгоритм_Хаффмана_для_n_ичной_системы_счисления
     // http://trinary.ru/kb/d0085167-8832-466b-8cba-cc2e377e84c3
-    public class HuffmanCoding : ICodingAlgorithm
+    public class HuffmanCoding : ITextEncodingAlgorithm
     {
         private readonly int _numberSystem;
 

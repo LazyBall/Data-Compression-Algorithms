@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Data_Compression
 {
-    public class ArithmeticCoding : ICodingAlgorithm
+    public class ArithmeticCoding : ITextEncodingAlgorithm
     {
         private Dictionary<char, double> slovar;
         private double left, rignt;

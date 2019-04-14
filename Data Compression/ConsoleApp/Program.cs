@@ -22,7 +22,7 @@ namespace ConsoleApp
             //decode = ar.Decode(code);
             //Console.WriteLine(code);
             //Console.WriteLine(decode);
-            var bw = new BurrowsWheelerTransform();
+            var bw = new BWT();
             Console.WriteLine(bw.Encode(messsage));
         }
     }
