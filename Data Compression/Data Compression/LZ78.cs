@@ -8,11 +8,14 @@ namespace Data_Compression
     /// <summary>
     /// LZ78
     /// </summary>
-    class LZ78 :ITextEncodingAlgorithm
+    public class LZ78 :ITextEncodingAlgorithm
     {
         public string Encode(string sourceText)
         {
-            var dictionary = new Dictionary<string, int>();
+            var dictionary = new Dictionary<string, int>
+            {
+                { string.Empty, 0 }
+            };
             var answer = new StringBuilder();
             var buffer = string.Empty;
 
@@ -25,11 +28,12 @@ namespace Data_Compression
                 else
                 {
                     answer.Append(string.Format("({0},{1})", dictionary[buffer], symbol));
-                    dictionary.Add(buffer + symbol, dictionary.Count + 1);
+                    dictionary.Add(buffer + symbol, dictionary.Count);
                     buffer = string.Empty;
                 }
             }
 
+            answer.Append(string.Format("({0},{1})", dictionary[buffer], '$'));
             return answer.ToString();
         }
 
@@ -38,8 +42,8 @@ namespace Data_Compression
             var codedTextPattern = @"\A(\(\d+,(.|\n)\))+\z";
             if (Regex.Match(codedText, codedTextPattern).Success)
             {
-                var singleCodePattern = @"\d+,(.|\n)";
-                var answer = new StringBuilder();
+                var singleCodePattern = @"\(\d+,(.|\n)\)";
+                var answer = new StringBuilder(codedText.Length);
                 var dictionary = new List<string>
                 {
                     string.Empty
@@ -47,16 +51,17 @@ namespace Data_Compression
 
                 foreach (Match match in Regex.Matches(codedText, singleCodePattern))
                 {
-                    var position = int.Parse(match.Value.Remove(match.Value.Length - 2));
-                    var symbol = match.Value[match.Value.Length - 1];
+                    var position = int.Parse(match.Value.Substring(1, match.Value.Length - 4));
+                    var symbol = match.Value[match.Value.Length - 2];
                     string word = string.Format("{0}{1}", dictionary[position], symbol);
                     answer.Append(word);
                     dictionary.Add(word);
                 }
 
+                answer.Remove(answer.Length - 1, 1);
                 return answer.ToString();
             }
-            else throw new ArgumentException();          
+            else throw new ArgumentException();
         }
     }
 }

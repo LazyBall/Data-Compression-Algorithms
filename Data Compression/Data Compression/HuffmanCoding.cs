@@ -14,9 +14,15 @@ namespace Data_Compression
     {
         private readonly int _numberSystem;
 
+        public HuffmanCoding()
+        {
+            this._numberSystem = 2;
+        }
+
         public HuffmanCoding(int numberSystem)
         {
             if (numberSystem < 2) throw new ArgumentException();
+            if (numberSystem > 10) throw new ArgumentException();
             this._numberSystem = numberSystem;
         }
 
@@ -200,7 +206,8 @@ namespace Data_Compression
         private static class Decoder
         {
 
-            public static string GetDecodedMessage(string codedMessage, IReadOnlyDictionary<char, string> codeWords)
+            public static string GetDecodedMessage(string codedMessage,
+                IReadOnlyDictionary<char, string> codeWords)
             {
                 var words = new Dictionary<string, char>(codeWords.Count);
 
@@ -212,38 +219,43 @@ namespace Data_Compression
                 return GetDecodedMessage(codedMessage, words);
             }
 
-            public static string GetDecodedMessage(string codedMessage, IReadOnlyDictionary<string, char> codeWords = null)
+            public static string GetDecodedMessage(string codedMessage,
+                IReadOnlyDictionary<string, char> codeWords = null)
             {
-                if (codeWords == null) codeWords = GetCodeWords(codedMessage);
+                int dictionaryPosition;
+                if (codeWords == null) codeWords = GetCodeWords(codedMessage, out dictionaryPosition);
+                else dictionaryPosition = codedMessage.Length;
                 var word = new StringBuilder(32);
                 var decodedMessage = new StringBuilder();
 
-                foreach (char symbol in codedMessage)
+                for (int i = 0; i < dictionaryPosition; i++)
                 {
-                    word.Append(symbol);
+                    word.Append(codedMessage[i]);
                     if (codeWords.TryGetValue(word.ToString(), out char decoded))
                     {
                         decodedMessage.Append(decoded);
                         word.Clear();
                     }
-                }
+                }              
 
                 return decodedMessage.ToString();
             }
 
-            static IReadOnlyDictionary<string, char> GetCodeWords(string codedMessage)
+            static IReadOnlyDictionary<string, char> GetCodeWords(string codedMessage,
+                out int dictionaryIndex)
             {
-                var patternAllCodes = @"\{(\[(.|\n)-[^\]]+\])+\}\z";
-                var patternOneCode = @"(.|\n)-[^\]]+";
-                var matchAllCodes = Regex.Match(codedMessage, patternAllCodes);
+                var codedTextPattern = @"\{(\[(.|\n)\-\d+\])+\}\z";               
+                var matchAllCodes = Regex.Match(codedMessage, codedTextPattern);
                 if (matchAllCodes.Success)
                 {
+                    dictionaryIndex = matchAllCodes.Index;
+                    var singleCodePattern = @"\[(.|\n)\-\d+\]";
                     var dictionary = new Dictionary<string, char>();
 
-                    foreach (Match matchCode in Regex.Matches(matchAllCodes.Value, patternOneCode))
+                    foreach (Match matchCode in Regex.Matches(matchAllCodes.Value, singleCodePattern))
                     {
-                        var code = matchCode.Value.Substring(2);
-                        dictionary.Add(code, matchCode.Value[0]);
+                        var code = matchCode.Value.Substring(3, matchCode.Value.Length - 4);
+                        dictionary.Add(code, matchCode.Value[1]);
                     }
 
                     return dictionary;

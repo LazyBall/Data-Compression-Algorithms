@@ -1,131 +1,247 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Data_Compression
 {
-    public class ArithmeticCoding : ITextEncodingAlgorithm
+    /// <summary>
+    /// Arithmetic coding
+    /// </summary>
+    public class ArithmeticCoding :ITextEncodingAlgorithm
     {
-        private Dictionary<char, double> slovar;
-        private double left, rignt;
-        private string rez;
-        public IOrderedEnumerable<KeyValuePair<char, double>> sorteslovar;
-        private int len;
+        private Dictionary<char, int> dictionary;
+        private List<char> letters;
+        private List<double> frequencies;
+        private double Left, Right;
+        private StringBuilder output;
+
         public ArithmeticCoding()
         {
-            slovar = new Dictionary<char, double>();
-            left = 0;
-            rignt = 1;
-            rez = null;
-        }        
-
-        private void CreateSlovar(string str)
+            dictionary = new Dictionary<char, int>();
+            letters = new List<char>();
+            frequencies = new List<double>();
+            Left = 0;
+            Right = 1;
+        }
+        public string Encode(string Enter)
         {
-            foreach (char ch in str)
+            Left = 0;
+            Right = 1;
+            output = new StringBuilder();
+            if (dictionary.Count == 0)
+                CreateDictionary(Enter);
+            int count = Enter.Length;
+            foreach (char letter in Enter)
             {
-                if (slovar.ContainsKey(ch))
-                    slovar[ch] += (double)1 / str.Length;
+                int index = letters.IndexOf(letter);
+                double range = Right - Left;
+                Right = Left + range * frequencies[index];
+                if (index != 0)
+                {
+                    Left += range * frequencies[index - 1];
+                }
+                if ((int)Math.Round(Left * 100, 0) == (int)Math.Round(Right * 100, 0))
+                {
+                    ChangeBorders(ref output);
+                }
+            }
+            var mid = new StringBuilder(Convert.ToString(Left + (Right - Left) / 2));
+            mid.Remove(0, 2);
+            output.Append(mid);
+            output.Append(",");
+            output.Append(Enter.Length);
+            output.Append(",");
+            output.Append(GetFrequencyDictionary());
+
+            return output.ToString();
+        }
+        public string Decode(string Enter)
+        {
+            SetFrequencyDictionary(Enter);
+            var str = Enter.Split(',');
+            int Count = int.Parse(str[1]);
+            output = new StringBuilder();
+            var entd = new StringBuilder("0,");
+            entd.Append(str[0]);
+            double enter = Convert.ToDouble(entd.ToString());
+            Left = 0;
+            Right = 1;
+            for (int i = 0; i < Count; i++)
+            {
+                int index = 0;
+
+
+                index = BinarySearch_Rec(enter, 0, frequencies.Count - 1, Right - Left);
+                output.Append(letters[index]);
+
+                if ((int)Math.Round(Left * 100, 0) == (int)Math.Round(Right * 100, 0))
+                {
+                    ChangeBordersDecode(ref entd);
+                    enter = Convert.ToDouble(entd.ToString());
+                }
+
+            }
+
+            return output.ToString();
+
+        }
+        private int BinarySearch_Rec(double key, int left, int right, double range)
+        {
+            int mid = left + (right - left) / 2;
+            double d = Left + (double)(range * frequencies[mid]);
+            if (left == right)
+            {
+                Right = Left + range * frequencies[mid];
+                if (mid != 0)
+                {
+                    Left += range * frequencies[mid - 1];
+                }
+                return mid;
+            }
+            else if (d > key)
+                return BinarySearch_Rec(key, left, mid, range);
+            else
+                return BinarySearch_Rec(key, mid + 1, right, range);
+        }
+        public string GetFrequencyDictionary()
+        {
+            StringBuilder output = new StringBuilder();
+            int count = letters.Count;
+
+            output.Append('{');
+            foreach (var ch in dictionary)
+            {
+                output.Append('[');
+                output.Append(ch.Key);
+                output.Append('-');
+                output.Append(ch.Value);
+                output.Append(']');
+
+            }
+            output.Append('}');
+            return output.ToString();
+        }
+        public void SetFrequencyDictionary(string Dictionary)
+        {
+            letters = new List<char>();
+            frequencies = new List<double>();
+            dictionary = new Dictionary<char, int>();
+            int n = 0;
+
+            var codedTextPattern = @"\{(\[(.|\n)\-\d+\])+\}\z";
+            var matchAllCodes = Regex.Match(Dictionary, codedTextPattern);
+            if (matchAllCodes.Success)
+            {
+                var singleCodePattern = @"\[(.|\n)\-\d+\]";
+
+                foreach (Match matchCode in Regex.Matches(matchAllCodes.Value, singleCodePattern))
+                {
+                    var code = int.Parse(matchCode.Value.Substring(3, matchCode.Value.Length - 4));
+                    n += code;
+                    dictionary.Add(matchCode.Value[1], code);
+                }
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+
+
+            //string mask = @"[(.|\n)\-\d+]";
+            //var matches = Regex.Matches(Dictionary, mask);
+            //foreach (Match match in matches)
+            //{
+            //    int freq;
+
+            //    string[] value = match.Value.Split(':');
+            //    char letter;
+            //    if (value[0] == "")
+            //    {
+            //        letter = ':';
+            //        freq = Convert.ToInt32(value[2]);
+            //    }
+            //    else
+            //    {
+            //        letter = (value[0][0]);
+
+            //        freq = Convert.ToInt32(value[1]);
+            //    }
+            //    n += freq;
+            //    dictionary.Add(letter, freq);
+            //}
+
+            CreateLine(n);
+        }
+        private void CreateDictionary(string Enter)
+        {
+            int n = Enter.Length;
+
+            for (int i = 0; i < n; i++)
+            {
+                if (dictionary.ContainsKey(Enter[i]))
+                {
+                    dictionary[Enter[i]]++;
+                }
                 else
-                    slovar.Add(ch, (double)1 / str.Length);
-            }
-            len = str.Length;
-            sorteslovar = slovar.OrderByDescending(s => s.Value);
-        }
-
-        private void Step(char ch)
-        {
-            int i = 0;
-            double delt = rignt - left;
-            while (sorteslovar.ElementAt(i).Key != ch)
-            {
-                left += delt * sorteslovar.ElementAt(i).Value;
-                i++;
-            }
-            rignt = left + delt * sorteslovar.ElementAt(i).Value;
-        }
-        private void DoubleToRez()
-        {
-            string l = Convert.ToString(left);
-            string r = Convert.ToString(rignt);
-            if (l.Length > 2 && r.Length > 2)
-            {
-                int i = 2;
-                while (l.Length > i && r.Length > i && l[i] == r[i])
                 {
-                    rez += l[i];
-                    i++;
+                    dictionary.Add((Enter[i]), 1);
                 }
-                l = l.Remove(2, i - 2);
-                r = r.Remove(2, i - 2);
-                left = Convert.ToDouble(l);
-                rignt = Convert.ToDouble(r);
+            }
+            CreateLine(n);
+        }
+        private void CreateLine(int n)
+        {
+            var sorteddic = dictionary.OrderByDescending(s => s.Value);
+            double border = 0;
+            foreach (var pair in sorteddic)
+            {
+                letters.Add(pair.Key);
+                border += (double)pair.Value / n;
+                frequencies.Add(border);
             }
         }
-        private void DoubleToRez2()
+        private void ChangeBorders(ref StringBuilder ou)
         {
-            string l = Convert.ToString(left);
-            string r = Convert.ToString(rignt);
+            var cl = new StringBuilder(Convert.ToString(Left));
+            var cr = new StringBuilder(Convert.ToString(Right));
 
-            if (l.Length > 2 && r.Length > 2)
+            int n = Math.Min(cl.Length, cr.Length);
+            for (int i = 2; i < n; i++)
             {
-                int i = 2;
-                while (l.Length > i && r.Length > i && l[i] == r[i] && rez[i - 2] == l[i])
+                if (cl[i] == cr[i])
                 {
-                    i++;
+                    ou.Append(cl[i]);
                 }
-                l = l.Remove(2, i - 2);
-                r = r.Remove(2, i - 2);
-                rez = rez.Remove(0, i - 2);
-                left = Convert.ToDouble(l);
-                rignt = Convert.ToDouble(r);
-
-            }
-
-        }
-        private void Final()
-        {
-            double mid = Math.Round(left + (rignt - left) / 2, 2);
-            var m = Convert.ToString(mid).Remove(0, 2);
-            rez += m;
-        }
-
-        public string Encode(string sourceText)
-        {
-            CreateSlovar(sourceText);
-            foreach (char ch in sourceText)
-            {
-                Step(ch);
-                DoubleToRez();
-            }
-            Final();
-            return rez;
-        }
-
-        public string Decode(string codedText)
-        {
-            string st = null;
-            rez = codedText;
-            var d = Convert.ToDouble("0," + rez);
-            left = 0;
-            rignt = 1;
-            for (int i = 0; i < len; i++)
-            {
-                var dl = left;
-                var dr = rignt;
-                Step(sorteslovar.ElementAt(0).Key);
-                int j = 0;
-                while (d >= rignt || d <= left)
+                else
                 {
-                    left = dl;
-                    rignt = dr;
-                    j++;
-                    Step(sorteslovar.ElementAt(j).Key);
+                    cl.Remove(2, i - 2);
+                    cr.Remove(2, i - 2);
+                    break;
                 }
-                st += sorteslovar.ElementAt(j).Key;
-                DoubleToRez2();
-                d = Convert.ToDouble("0," + rez);
             }
-            return st;
+            Left = Convert.ToDouble(cl.ToString());
+            Right = Convert.ToDouble(cr.ToString());
+
+        }
+        private void ChangeBordersDecode(ref StringBuilder stringBuilder)
+        {
+            var cl = new StringBuilder(Convert.ToString(Left));
+            var cr = new StringBuilder(Convert.ToString(Right));
+            int n = Math.Min(cl.Length, cr.Length);
+            for (int i = 2; i < n; i++)
+            {
+                if (cl[i] != cr[i])
+                {
+                    cl.Remove(2, i - 2);
+                    cr.Remove(2, i - 2);
+                    stringBuilder.Remove(2, i - 2);
+                    break;
+                }
+            }
+            Left = Convert.ToDouble(cl.ToString());
+            Right = Convert.ToDouble(cr.ToString());
         }
     }
 }

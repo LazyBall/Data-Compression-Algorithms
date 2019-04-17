@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Data_Compression
 {
@@ -10,44 +12,112 @@ namespace Data_Compression
     /// </summary>
     //source https://neerc.ifmo.ru/wiki/index.php?title=Преобразование_Барроуза-Уилера#.D0.90.D0.BB.D0.B3.D0.BE.D1.80.D0.B8.D1.82.D0.BC_.D0.B7.D0.B0_.D0.BB.D0.B8.D0.BD.D0.B5.D0.B9.D0.BD.D0.BE.D0.B5_.D0.B2.D1.80.D0.B5.D0.BC.D1.8F
     public class BWT : ITextEncodingAlgorithm
-    {       
-
+    {
+        
         public string Encode(string sourceText)
         {
-            var matrix = new Permutation[sourceText.Length];
-            matrix[0] = new Permutation(sourceText.Length, true);
+            // при изменении нужно изменить и в регулярном выражении в Decode
+            int textBlockSize = 8192;
+            var answer = new StringBuilder(sourceText.Length);
+            int currentIndex = 0;
 
-            for (int j = 0; j < sourceText.Length; j++)
+            while (currentIndex != sourceText.Length)
             {
-                matrix[0][j] = sourceText[j];
+                int length = Math.Min(sourceText.Length - currentIndex, textBlockSize);
+                answer.Append('(');
+                answer.Append(EncodeTextBlock(sourceText.Substring(currentIndex, length)));
+                answer.Append(')');
+                currentIndex += length;
             }
 
-            for (int i = 1; i < sourceText.Length; i++)
-            {
-                matrix[i] = new Permutation(sourceText.Length, false);
+            return answer.ToString();
+        }
 
-                for (int j = 0; j < sourceText.Length; j++)
+        public string Decode(string codedText)
+        {
+            var codedTextPattern = @"\A(\((.|\n){8192},\d+\))*(\((.|\n){1,8191},\d+\)){0,1}\z";
+            if (Regex.Match(codedText, codedTextPattern).Success)
+            {
+                var singleCodePattern = @"(\((.|\n){8192},\d+\))|(\((.|\n){1,8191},\d+\)\z)";
+                var answer = new StringBuilder(codedText.Length);
+
+                foreach (Match match in Regex.Matches(codedText, singleCodePattern))
                 {
-                    matrix[i][j] = sourceText[(i + j) % sourceText.Length];
+                    answer.Append(DecodeTextBlock(match.Value.Substring(1, match.Value.Length - 2)));
                 }
 
+                return answer.ToString();
             }
+            else throw new ArgumentException();
+        }
 
+        private string EncodeTextBlock(string textBlock)
+        {
+            var matrix = new Permutation[textBlock.Length];
+            FillMatrix(matrix, textBlock);
+            matrix[0].Original = true;
             Array.Sort(matrix);
-            var strBuilder = new StringBuilder(sourceText.Length + 11);
+            var answer = new StringBuilder(textBlock.Length + 11);
             int index = 0;
-            var lastColumn = sourceText.Length - 1;
+            var lastColumn = textBlock.Length - 1;
 
-            for (int i = 0; i < sourceText.Length; i++)
+            for (int i = 0; i < textBlock.Length; i++)
             {
-                strBuilder.Append(matrix[i][lastColumn]);
+                answer.Append(matrix[i][lastColumn]);
                 if (matrix[i].Original) index = i;
             }
 
-            strBuilder.Append(",");
-            strBuilder.Append(index);
-            return strBuilder.ToString();
-        }
+            answer.Append(',');
+            answer.Append(index);
+            return answer.ToString();
+        }        
+
+        private void FillMatrix(Permutation[] permutations, string sourceText)
+        {
+            int coreCount = 0;
+            try
+            {
+                foreach (var item in new System.Management.ManagementObjectSearcher("Select NumberOfCores from Win32_Processor").Get())
+                {
+                    coreCount += int.Parse(item["NumberOfCores"].ToString());
+                }
+            }
+            catch
+            {
+                coreCount = 4;
+            }
+            var tasks = new Task[coreCount];
+            int lengthOnTask = Math.DivRem(permutations.Length, coreCount, out int remainder);
+            int currentIndex = 0;
+
+            for (int i = 0; i < tasks.Length; i++)
+            {
+                var index = currentIndex;
+                var currentLength = lengthOnTask;
+                if (i < remainder) currentLength++;
+                tasks[i] = Task.Run(() => FillPartOfMatrix(sourceText, permutations, index, currentLength));
+                currentIndex += currentLength;
+            }
+
+            Task.WaitAll(tasks);
+
+            //local function
+            void FillPartOfMatrix(string text, Permutation[] matrix, int startIndex, int length)
+            {
+                var endIndex = startIndex + length;
+
+                for (int i = startIndex; i < endIndex; i++)
+                {
+                    matrix[i] = new Permutation(text.Length, false);
+
+                    for (int j = 0; j < text.Length; j++)
+                    {
+                        matrix[i][j] = text[(i + j) % text.Length];
+                    }
+
+                }
+            }
+        }       
 
         //Перестановка
         private class Permutation: IComparable<Permutation>
@@ -85,36 +155,23 @@ namespace Data_Compression
         }
 
         //Преобразование Барроуза-Уилера, Викиконспекты, Обратное преобразование, линейный алгоритм
-        public string Decode(string codedText)
+        private string DecodeTextBlock(string codedTextBlock)
         {
-            //массив для получения номера исходной строки в отсортированной матрице (просто чтобы сделать это быстро)
-            //11 нулей, так как int.Max равен 2 миллиардам
-            var characters = new char[] { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0' }; 
-            int separatorPosition = codedText.Length; //позиция разделителя (запятой)
-
-            for (int i = characters.Length - 1; i > -1; i--)
-            {
-                var symbol = codedText[--separatorPosition];
-                if (symbol == ',') break;
-                else characters[i] = symbol;
-            }
-
-            
-            int index = int.Parse(new string(characters)); //получили номер строки в отсортированной матрице
+            int separatorPosition = codedTextBlock.LastIndexOf(',');
+            int index = int.Parse(codedTextBlock.Substring(separatorPosition + 1)); //получили номер строки в отсортированной матрице
             var states = new State[separatorPosition]; //массив состояний для преобразованной строки
             var uniqueCharacters = new Dictionary<char, int>(); //словарь уникальных символов и количество их появлений
 
             for (int i = 0; i < separatorPosition; i++)
             {
-                var symbol = codedText[i];
+                var symbol = codedTextBlock[i];
                 if (uniqueCharacters.TryGetValue(symbol, out int value)) uniqueCharacters[symbol]++;
                 else uniqueCharacters.Add(symbol, 1);
                 states[i] = new State(symbol, value);
             }
 
-            var sortedSymbols = (from x in uniqueCharacters orderby x.Key select x.Key).ToArray();
             int sum = 0;
-            foreach(var element in sortedSymbols)
+            foreach(var element in (from x in uniqueCharacters orderby x.Key select x.Key).ToArray())
             {
                 var value = uniqueCharacters[element];
                 uniqueCharacters[element] = sum;
@@ -125,7 +182,7 @@ namespace Data_Compression
              * которые лексикографически меньше, чем текущий */
 
             //начинаем формировать исходную (до преобразования) строку
-            characters = new char[separatorPosition];
+            var characters = new char[separatorPosition];
 
             while (separatorPosition > 0)
             {
