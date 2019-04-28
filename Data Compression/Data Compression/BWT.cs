@@ -14,8 +14,8 @@ namespace Data_Compression
     public class BWT : ITextEncodingAlgorithm
     {
         
-        public string Encode(string sourceText)
-        {
+        public string Encode(string sourceText, out double compressionRatio)
+        {           
             // при изменении нужно изменить и в регулярном выражении в Decode
             int textBlockSize = 8192;
             var answer = new StringBuilder(sourceText.Length);
@@ -29,6 +29,8 @@ namespace Data_Compression
                 answer.Append(')');
                 currentIndex += length;
             }
+
+            compressionRatio = (double)sourceText.Length / answer.Length;
 
             return answer.ToString();
         }
@@ -70,36 +72,39 @@ namespace Data_Compression
             answer.Append(',');
             answer.Append(index);
             return answer.ToString();
-        }        
+        }
 
         private void FillMatrix(Permutation[] permutations, string sourceText)
         {
-            int coreCount = 0;
+            int taskCount = 1;
+
             try
             {
-                foreach (var item in new System.Management.ManagementObjectSearcher("Select NumberOfCores from Win32_Processor").Get())
-                {
-                    coreCount += int.Parse(item["NumberOfCores"].ToString());
-                }
+                taskCount = Environment.ProcessorCount; //логические процессоры
+                //foreach (var item in new System.Management.ManagementObjectSearcher("Select NumberOfCores from Win32_Processor").Get())
+                //{
+                //    coreCount += int.Parse(item["NumberOfCores"].ToString());
+                //}
             }
             catch
             {
-                coreCount = 4;
+                taskCount = 4;
             }
-            var tasks = new Task[coreCount];
-            int lengthOnTask = Math.DivRem(permutations.Length, coreCount, out int remainder);
+
+            var tasks = new List<Task>(taskCount);
+            int lengthOnTask = Math.DivRem(permutations.Length, taskCount, out int remainder);
             int currentIndex = 0;
 
-            for (int i = 0; i < tasks.Length; i++)
+            for (int i = 0; currentIndex < permutations.Length; i++)
             {
                 var index = currentIndex;
                 var currentLength = lengthOnTask;
                 if (i < remainder) currentLength++;
-                tasks[i] = Task.Run(() => FillPartOfMatrix(sourceText, permutations, index, currentLength));
+                tasks.Add(Task.Run(() => FillPartOfMatrix(sourceText, permutations, index, currentLength)));
                 currentIndex += currentLength;
             }
 
-            Task.WaitAll(tasks);
+            Task.WaitAll(tasks.ToArray());
 
             //local function
             void FillPartOfMatrix(string text, Permutation[] matrix, int startIndex, int length)
@@ -117,7 +122,7 @@ namespace Data_Compression
 
                 }
             }
-        }       
+        }   
 
         //Перестановка
         private class Permutation: IComparable<Permutation>

@@ -9,22 +9,30 @@ namespace Data_Compression
     /// </summary>
     public class RLE : ITextEncodingAlgorithm
     {        
-        public string Encode(string sourceText)
+        public string Encode(string sourceText, out double compressionRatio)
         {
             var answer = new StringBuilder();
-            int counter = 1;
+            uint blockСounter, charCounter, maxCharCounter;
+            blockСounter = charCounter = maxCharCounter = 1;
 
             for (int i = 1; i < sourceText.Length; i++)
             {
-                if (sourceText[i - 1] == sourceText[i]) counter++;
+                if (sourceText[i - 1] == sourceText[i]) charCounter++;
                 else
                 {
-                    answer.Append(string.Format("({0},{1})", sourceText[i - 1], counter));
-                    counter = 1;
+                    answer.Append(string.Format("({0},{1})", sourceText[i - 1], charCounter));
+                    if (charCounter > maxCharCounter) maxCharCounter = charCounter;
+                    blockСounter++;
+                    charCounter = 1;
                 }
             }
 
-            answer.Append(string.Format("({0},{1})", sourceText[sourceText.Length - 1], counter));
+            answer.Append(string.Format("({0},{1})", sourceText[sourceText.Length - 1], charCounter));
+
+            double charSize = BitHacks.GetRealSizeForNumber(char.MaxValue);
+            compressionRatio = (sourceText.Length * charSize) /
+                (blockСounter * (BitHacks.GetRealSizeForNumber(maxCharCounter) + charSize));
+
             return answer.ToString();
 
         }

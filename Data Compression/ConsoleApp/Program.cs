@@ -10,8 +10,8 @@ namespace ConsoleApp
     {
         static void Main()
         {
-            //var message = @"sdhbsduhP}}{}{}{}O{OIUH(986737432462_[3-5-6--]][65-1][a-002]";
-            var message = ReadFromFile("WarAndWorld.txt").Substring(2980000);
+            var message = "swiss_miss";
+            //var message = ReadFromFile("WarAndWorld.txt").Substring(2980000);
             //var message = ReadFromFile("test.txt");
             //message = message.Replace("\r\n", "\n");
             Console.WriteLine(message.Length);
@@ -21,8 +21,7 @@ namespace ConsoleApp
                 new HuffmanCoding(),
                 new RLE(),
                 new LZ78(),
-                new BWT(),
-                new ArithmeticCoding()                
+                new BWT()
             };
 
             var list2 = new List<ITextEncodingAlgorithm>
@@ -30,15 +29,15 @@ namespace ConsoleApp
                 new HuffmanCoding(),
                 new RLE(),
                 new LZ78(),
-                new BWT(),
-                new ArithmeticCoding()
+                new BWT()
             };
 
             for(int i=0; i<list1.Count; i++)
             {
-                var codedMessage = list1[i].Encode(message);
+                var codedMessage = list1[i].Encode(message, out double ratio);
                 var decodedMessage = list2[i].Decode(codedMessage);
-                Console.WriteLine(message == decodedMessage);
+                Console.Write(message == decodedMessage);
+                Console.WriteLine(ratio);
             }
             
         }

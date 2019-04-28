@@ -10,14 +10,16 @@ namespace Data_Compression
     /// </summary>
     public class LZ78 :ITextEncodingAlgorithm
     {
-        public string Encode(string sourceText)
+        public string Encode(string sourceText, out double compressionRatio)
         {
             var dictionary = new Dictionary<string, int>
             {
                 { string.Empty, 0 }
             };
+
             var answer = new StringBuilder();
             var buffer = string.Empty;
+            int blockCounter = 0;
 
             foreach (var symbol in sourceText)
             {
@@ -28,12 +30,19 @@ namespace Data_Compression
                 else
                 {
                     answer.Append(string.Format("({0},{1})", dictionary[buffer], symbol));
+                    blockCounter++;
                     dictionary.Add(buffer + symbol, dictionary.Count);
                     buffer = string.Empty;
                 }
             }
 
             answer.Append(string.Format("({0},{1})", dictionary[buffer], '$'));
+            blockCounter++;
+
+            double charSize = BitHacks.GetRealSizeForNumber(char.MaxValue);
+            compressionRatio = (sourceText.Length * charSize) /
+                (blockCounter * (charSize + BitHacks.GetRealSizeForNumber((uint)dictionary.Count)));
+
             return answer.ToString();
         }
 

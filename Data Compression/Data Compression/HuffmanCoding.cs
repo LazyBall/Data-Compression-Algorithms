@@ -24,9 +24,31 @@ namespace Data_Compression
             if (numberSystem < 2) throw new ArgumentException();
             if (numberSystem > 10) throw new ArgumentException();
             this._numberSystem = numberSystem;
+        }       
+        
+        public string Encode(string sourceText, out double compressionRatio)
+        {
+            var codes = CreateCodeWords(sourceText, _numberSystem);
+            var builder = Coder.GetCodedMessageBuilder(sourceText, codes);
+
+            compressionRatio = (sourceText.Length * (double)BitHacks.GetRealSizeForNumber(char.MaxValue))
+                / ((double)BitHacks.GetRealSizeForNumber((uint)Math.Min(codes.Count, _numberSystem) - 1)
+                * builder.Length);
+
+            return Coder.AddCodeWords(builder, codes).ToString();
         }
 
-        private IReadOnlyDictionary<char, string> CreateCodeWords(IReadOnlyDictionary<char, double> 
+        public string Decode(string codedText)
+        {
+            return Decoder.GetDecodedMessage(codedText);
+        }
+
+        private IReadOnlyDictionary<char, string> CreateCodeWords(string message, int numberSystem)
+        {
+            return CreateCodeWords(GetFrequencyDictionary(message), numberSystem);
+        }
+
+        private IReadOnlyDictionary<char, string> CreateCodeWords(IReadOnlyDictionary<char, double>
             frequencyDictionary, int numberSystem)
         {
             var tree = new List<Node>(frequencyDictionary.Count);
@@ -81,21 +103,6 @@ namespace Data_Compression
             }
 
             return GetCodesWhenTraversing(tree[0]);
-        }
-
-        private IReadOnlyDictionary<char, string> CreateCodeWords(string message, int numberSystem)
-        {
-            return CreateCodeWords(GetFrequencyDictionary(message), numberSystem);
-        }
-
-        public string Encode(string sourceText)
-        {
-            return Coder.GetCodedMessage(sourceText, CreateCodeWords(sourceText, _numberSystem), true);
-        }
-
-        public string Decode(string codedText)
-        {
-            return Decoder.GetDecodedMessage(codedText);
         }
 
         private IReadOnlyDictionary<char, double> GetFrequencyDictionary(string message)
@@ -168,37 +175,40 @@ namespace Data_Compression
 
         private static class Coder
         {
-
             public static string GetCodedMessage(string message, IReadOnlyDictionary<char, string> codes,
                 bool addCodes = false)
             {
-                var codedMessage = new StringBuilder(GetCodedMessage(message, codes));
-
-                if (addCodes)
-                {
-                    codedMessage.Append('{');
-
-                    foreach (var pair in codes)
-                    {
-                        codedMessage.Append(string.Format("[{0}-{1}]", pair.Key, pair.Value));
-                    }
-
-                    codedMessage.Append('}');
-                }
-
-                return codedMessage.ToString();
+                return GetCodedMessageBuilder(message, codes, addCodes).ToString();
             }
 
-            static string GetCodedMessage(string message, IReadOnlyDictionary<char, string> codes)
+            public static StringBuilder AddCodeWords(StringBuilder codedMessageBuilder, 
+                IReadOnlyDictionary<char, string> codes)
             {
-                StringBuilder codedMessage = new StringBuilder(message.Length * 3);
+                codedMessageBuilder.Append('{');
+
+                foreach (var pair in codes)
+                {
+                    codedMessageBuilder.Append(string.Format("[{0}-{1}]", pair.Key, pair.Value));
+                }
+
+                codedMessageBuilder.Append('}');
+
+                return codedMessageBuilder;
+            }
+
+            public static StringBuilder GetCodedMessageBuilder(string message, 
+                IReadOnlyDictionary<char, string> codes, bool addCodes=false)
+            {
+                StringBuilder codedMessageBuilder = new StringBuilder(message.Length * 3);
 
                 foreach (var symbol in message)
                 {
-                    codedMessage.Append(codes[symbol]);
+                    codedMessageBuilder.Append(codes[symbol]);
                 }
 
-                return codedMessage.ToString();
+                if (addCodes) codedMessageBuilder = AddCodeWords(codedMessageBuilder, codes);
+
+                return codedMessageBuilder;
             }
 
         }
