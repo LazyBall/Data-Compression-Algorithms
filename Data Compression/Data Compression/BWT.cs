@@ -176,7 +176,7 @@ namespace Data_Compression
             }
 
             int sum = 0;
-            foreach(var element in (from x in uniqueCharacters orderby x.Key select x.Key).ToArray())
+            foreach(var element in (from x in uniqueCharacters orderby x.Key select x.Key))
             {
                 var value = uniqueCharacters[element];
                 uniqueCharacters[element] = sum;
