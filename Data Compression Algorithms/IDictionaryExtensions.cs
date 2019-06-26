@@ -2,7 +2,7 @@
 using System.Text;
 using System;
 
-namespace CodikSite.Algorithms
+namespace DataCompressionAlgorithms
 {
     static class IDictionaryExtensions
     {

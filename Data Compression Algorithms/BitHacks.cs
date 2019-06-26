@@ -1,5 +1,5 @@
 ﻿
-namespace CodikSite.Algorithms
+namespace DataCompressionAlgorithms
 {
     static class BitHacks
     {

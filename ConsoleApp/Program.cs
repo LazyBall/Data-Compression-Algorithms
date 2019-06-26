@@ -1,5 +1,5 @@
 ﻿using System;
-using CodikSite.Algorithms;
+using DataCompressionAlgorithms;
 using System.IO;
 using System.Collections.Generic;
 

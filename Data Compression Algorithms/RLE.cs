@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CodikSite.Algorithms
+namespace DataCompressionAlgorithms
 {
     /// <summary>
     /// Run-Length Encoding

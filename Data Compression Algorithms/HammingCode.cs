@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace CodikSite.Algorithms
+namespace DataCompressionAlgorithms
 {
     public class Hamming
     {
