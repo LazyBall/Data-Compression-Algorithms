@@ -2,32 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DataCompressionAlgorithms
 {
-    public class Code
+    public class LinearCode
     {
         public string[,] H;
         public string[,] G;
         private SortedSet<string> vectors;
         public SortedSet<string>[] A;
         public string[] S;
-        public Code(string matrix)
-        {                                
-            FullVectors();            
+        public LinearCode(string matrix)
+        {
+            FullVectors();
             FormingH(matrix);
             FormingG(matrix);
             FormingA();
             FormingS();
         }
-        public string FormingPrint ()
+        public string FormingPrint()
         {
             var ansver = new StringBuilder();
             ansver.Append("H:\n");
-            for (int i = 0;i<2;i++)
+            for (int i = 0; i < 2; i++)
             {
-                for(int j = 0;j<5;j++)
+                for (int j = 0; j < 5; j++)
                 {
                     ansver.Append(H[j, i]);
                 }
@@ -42,9 +41,9 @@ namespace DataCompressionAlgorithms
                 }
                 ansver.Append("\n");
             }
-            for (int i = 0;i<8;i++)
+            for (int i = 0; i < 8; i++)
             {
-                ansver.Append("A["+i+"] = { ");
+                ansver.Append("A[" + i + "] = { ");
                 foreach (var s in A[i])
                 {
                     ansver.Append(s + " ");
@@ -58,12 +57,12 @@ namespace DataCompressionAlgorithms
         {
             var enters = enter.Split(' ');
             var vector = new StringBuilder();
-            for (int i = 0;i<5;i++)
+            for (int i = 0; i < 5; i++)
             {
                 int sum = 0;
-                for(int j = 0;j<2;j++)
+                for (int j = 0; j < 2; j++)
                 {
-                    if (enters[j]=="1" && enters[j] == H[i, j])
+                    if (enters[j] == "1" && enters[j] == H[i, j])
                         sum++;
                 }
                 vector.Append(sum % 2);
@@ -99,15 +98,20 @@ namespace DataCompressionAlgorithms
                 {
                     foreach (var v in A[i])
                     {
-                        if (v.IndexOf('1') == v.LastIndexOf('1'))
+                        int count = 0;
+                        for (int j = 0; j < v.Length; j++)
                         {
-                            ansver.Append("\nExp = " + A[i].ElementAt(0));
+                            if (v[j] == '1')
+                                count++;
+                        }
+                        if (count == 1)
+                        {
+                            ansver.Append("\ne = " + v + "\nCorrect = " + AddingVectors(enter, v));
                             break;
                         }
-                        
                     }
                     break;
-                    
+
                 }
             }
             return ansver.ToString();
@@ -115,7 +119,7 @@ namespace DataCompressionAlgorithms
         private void FormingH(string st)
         {
             H = new string[5, 2];
-            var SplitSt = st.Split(new char[] { ' ','\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var SplitSt = st.Split(new char[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             int k = 0;
             for (int i = 0; i < 2; i++)
                 for (int j = 2; j < 5; j++)
@@ -128,14 +132,14 @@ namespace DataCompressionAlgorithms
             H[1, 1] = "1";
             H[0, 1] = "0";
         }
-        private void FormingG (string st)
+        private void FormingG(string st)
         {
             G = new string[5, 3];
-            var SplitSt = st.Split(new char[] { ' ','\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var SplitSt = st.Split(new char[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             int k = 0;
-            for (int i = 0;i<2;i++)
+            for (int i = 0; i < 2; i++)
             {
-                for(int j = 0;j<3;j++)
+                for (int j = 0; j < 3; j++)
                 {
                     G[i, j] = SplitSt[k];
                     k++;
@@ -145,12 +149,12 @@ namespace DataCompressionAlgorithms
             G[3, 0] = "0";
             G[4, 0] = "0";
             G[3, 1] = "1";
-            G[2, 1] = "0";            
+            G[2, 1] = "0";
             G[4, 1] = "0";
             G[4, 2] = "1";
             G[2, 2] = "0";
             G[3, 2] = "0";
-           
+
 
         }
         private void FullVectors()
@@ -173,15 +177,15 @@ namespace DataCompressionAlgorithms
                 }
                 vectors.Add(vector.ToString());
             }
-        } 
-        private void FormingA ()
+        }
+        private void FormingA()
         {
             A = new SortedSet<string>[8];
             for (int i = 0; i < 8; i++)
                 A[i] = new SortedSet<string>();
             var vector = new StringBuilder();
             for (int i = 0; i < 2; i++)
-            {                
+            {
                 for (int j = 0; j < 5; j++)
                 {
                     vector.Append(H[j, i]);
@@ -193,21 +197,21 @@ namespace DataCompressionAlgorithms
             A[0].Add(AddingVectors(A[0].ElementAt(0), A[0].ElementAt(1)));
             A[0].Add("00000");
             vectors.Remove("00000");
-            
-            for (int i = 1;i<8;i++)
+
+            for (int i = 1; i < 8; i++)
             {
                 var b = vectors.First();
                 vectors.Remove(b);
-                for (int j = 0;j<4;j++)
+                for (int j = 0; j < 4; j++)
                 {
                     A[i].Add(AddingVectors(b, A[0].ElementAt(j)));
                 }
             }
         }
-        public string AddingVectors (string vector1, string vector2)
+        public string AddingVectors(string vector1, string vector2)
         {
             var rezult = new StringBuilder();
-            for (int i = 0;i<5;i++)
+            for (int i = 0; i < 5; i++)
             {
                 if (vector1[i] != vector2[i])
                     rezult.Append("1");
@@ -217,17 +221,17 @@ namespace DataCompressionAlgorithms
             vectors.Remove(rezult.ToString());
             return rezult.ToString();
         }
-        private void FormingS ()
+        private void FormingS()
         {
             S = new string[8];
-            for (int i = 0;i<8;i++)
+            for (int i = 0; i < 8; i++)
             {
                 var vector = new StringBuilder();
                 string u = A[i].ElementAt(0);
-                for (int l = 0; l<3;l++)
+                for (int l = 0; l < 3; l++)
                 {
-                    int sum = 0;                    
-                    for (int k = 0;k<5;k++)
+                    int sum = 0;
+                    for (int k = 0; k < 5; k++)
                     {
                         if (G[k, l] == "1" && G[k, l] == u[k].ToString())
                             sum++;

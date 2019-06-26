@@ -3,21 +3,23 @@ using System.Text;
 
 namespace DataCompressionAlgorithms
 {
-    public class Hamming
+    public class HammingCode
     {
         private int[,] G = new int[,] { {1,1,1,0,0,0,0 },
-            {1,0,0,1,1,0,0 },{0,1,0,1,0,1,0},{1,1,0,1,0,0,1}
+                                        {1,0,0,1,1,0,0 },
+                                        {0,1,0,1,0,1,0},
+                                        {1,1,0,1,0,0,1}
         };
         private int[,] H = new int[,] { {0,0,1},{0,1,0},{0,1,1},{1,0,0},{1,0,1},{1,1,0},{1,1,1}
         };
-        public Hamming() { }
-        public string Encode (string enter)
+        public HammingCode() { }
+        public string Encode(string enter)
         {
             StringBuilder builder = new StringBuilder();
-            for(int i = 0;i<7;i++)
+            for (int i = 0; i < 7; i++)
             {
                 int rez = 0;
-                for (int j = 0;j<4;j++)
+                for (int j = 0; j < 4; j++)
                 {
                     if (enter[j] == '1' && G[j, i] == 1)
                         rez++;
@@ -27,17 +29,17 @@ namespace DataCompressionAlgorithms
             return builder.ToString();
 
         }
-        public string Decode (string enter)
+        public string Decode(string enter)
         {
-            var entErr = ErrorGenerator(enter);
-            
+            //var entErr = ErrorGenerator(enter);
+
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < 3; i++)
             {
                 int rez = 0;
                 for (int j = 0; j < 7; j++)
                 {
-                    if (entErr[j] == '1' && H[j, i] == 1)
+                    if (enter[j] == '1' && H[j, i] == 1)
                         rez++;
                 }
                 builder.Append(rez % 2);
@@ -49,9 +51,14 @@ namespace DataCompressionAlgorithms
                 index += 2;
             if (builder[2] == '1')
                 index += 1;
-            return entErr+'\n'+ index.ToString();
+            var ret = new StringBuilder(enter);
+            if (enter[index - 1] == '1')
+                ret[index - 1] = '0';
+            else
+                ret[index - 1] = '1';
+            return ret.ToString();
         }
-        private string ErrorGenerator(string enter)
+        public string ErrorGenerator(string enter)
         {
             Random random = new Random();
             int i = random.Next(0, 6);
