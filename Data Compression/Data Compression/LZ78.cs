@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Data_Compression
+namespace CodikSite.Algorithms
 {
     /// <summary>
     /// LZ78
     /// </summary>
-    public class LZ78 :ITextEncodingAlgorithm
+    public class LZ78 : ITextEncodingAlgorithm
     {
         public string Encode(string sourceText, out double compressionRatio)
         {
@@ -30,9 +30,9 @@ namespace Data_Compression
                 else
                 {
                     answer.Append(string.Format("({0},{1})", dictionary[buffer], symbol));
-                    blockCounter++;
                     dictionary.Add(buffer + symbol, dictionary.Count);
                     buffer = string.Empty;
+                    blockCounter++;
                 }
             }
 
@@ -48,21 +48,17 @@ namespace Data_Compression
 
         public string Decode(string codedText)
         {
-            var codedTextPattern = @"\A(\(\d+,(.|\n)\))+\z";
-            if (Regex.Match(codedText, codedTextPattern).Success)
+            if (Regex.IsMatch(codedText, @"\A(\(\d+,(.|\n)\))+\z"))
             {
                 var singleCodePattern = @"\(\d+,(.|\n)\)";
                 var answer = new StringBuilder(codedText.Length);
-                var dictionary = new List<string>
-                {
-                    string.Empty
-                };
+                var dictionary = new List<string> { string.Empty };
 
                 foreach (Match match in Regex.Matches(codedText, singleCodePattern))
                 {
                     var position = int.Parse(match.Value.Substring(1, match.Value.Length - 4));
                     var symbol = match.Value[match.Value.Length - 2];
-                    string word = string.Format("{0}{1}", dictionary[position], symbol);
+                    var word = string.Format("{0}{1}", dictionary[position], symbol);
                     answer.Append(word);
                     dictionary.Add(word);
                 }
@@ -70,7 +66,12 @@ namespace Data_Compression
                 answer.Remove(answer.Length - 1, 1);
                 return answer.ToString();
             }
-            else throw new ArgumentException();
+            else
+            {
+                throw new ArgumentException();
+            }
         }
+
     }
+
 }
