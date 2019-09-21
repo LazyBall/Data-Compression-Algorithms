@@ -1,8 +1,8 @@
-﻿using System;
-using DataCompressionAlgorithms;
-using System.IO;
+﻿using DataCompressionAlgorithms;
+using System;
 using System.Collections.Generic;
-
+using System.IO;
+using System.Text;
 
 namespace ConsoleApp
 {
@@ -10,7 +10,7 @@ namespace ConsoleApp
     {
         static void Main()
         {
-            var message = "abcdefgh";
+            var message = CreateRandomString(1000);
             //var message = ReadFromFile("WarAndWorld.txt");
             //message = message.Substring(message.Length - message.Length / 100000);
             //var message = ReadFromFile("test.txt");
@@ -45,7 +45,6 @@ namespace ConsoleApp
                 Console.WriteLine(ratio);
                 Console.WriteLine();
             }
-            
         }
 
         static string ReadFromFile(string fileName)
@@ -54,6 +53,20 @@ namespace ConsoleApp
             {
                 return inputfile.ReadToEnd();
             }
+        }
+
+        static string CreateRandomString(int length)
+        {
+            StringBuilder builder = new StringBuilder();
+            Random random = new Random(DateTime.Now.Millisecond);
+
+            while (length > 0)
+            {
+                builder.Append((char)random.Next(65000));
+                length--;
+            }
+
+            return builder.ToString();
         }
     }
 }
