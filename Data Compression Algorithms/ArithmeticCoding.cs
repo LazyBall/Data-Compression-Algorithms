@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -26,15 +26,26 @@ namespace DataCompressionAlgorithms
                 {
                     throw new ArgumentOutOfRangeException();
                 }
+
                 var gcd = BigInteger.GreatestCommonDivisor(numerator, denominator);
                 this._numerator = numerator / gcd;
                 this._denominator = denominator / gcd;
 
-                if (_denominator < BigInteger.Zero)
+                if (this._denominator.Sign < 0)
                 {
-                    _numerator *= -1;
-                    _denominator *= -1;
+                    this._numerator *= -1;
+                    this._denominator *= -1;
                 }
+            }
+
+            public static implicit operator RationalNumber(BigInteger number)
+            {
+                return new RationalNumber(number, 1);
+            }
+
+            public static implicit operator RationalNumber(int number)
+            {
+                return new RationalNumber(number, 1);
             }
 
             public int CompareTo(RationalNumber other)
@@ -67,18 +78,6 @@ namespace DataCompressionAlgorithms
                     first._denominator * second._numerator);
             }
 
-            public static bool operator <(RationalNumber first, RationalNumber second)
-            {
-                return (first._numerator * second._denominator) <
-                    (first._denominator * second._numerator);
-            }
-
-            public static bool operator >(RationalNumber first, RationalNumber second)
-            {
-                return (first._numerator * second._denominator) >
-                    (first._denominator * second._numerator);
-            }
-
             public static bool operator <=(RationalNumber first, RationalNumber second)
             {
                 return (first._numerator * second._denominator) <=
@@ -91,21 +90,20 @@ namespace DataCompressionAlgorithms
                     (first._denominator * second._numerator);
             }
 
-            public static implicit operator RationalNumber(BigInteger number)
+            public static bool operator <(RationalNumber first, RationalNumber second)
             {
-                return new RationalNumber(number, 1);
+                return !(first >= second);
             }
 
-            public static implicit operator RationalNumber(int number)
+            public static bool operator >(RationalNumber first, RationalNumber second)
             {
-                return new RationalNumber(number, 1);
+                return !(first <= second);
             }
 
             public override string ToString()
             {
                 return string.Format("{0}/{1}", this._numerator, this._denominator);
             }
-
         }
 
         private Dictionary<char, int> CountEachCharacter(IEnumerable<char> characters)
@@ -170,7 +168,6 @@ namespace DataCompressionAlgorithms
                 right = right * 10 - digit;
                 digit = GetFirstDigitAfterDot(left);
             }
-
         }
 
         public string Encode(string sourceText, out double compressionRatio)
@@ -196,11 +193,21 @@ namespace DataCompressionAlgorithms
                 var index = characterIndexes[symbol];
                 var range = right - left;
                 right = left + range * probabilities[index];
-                left = left + range * probabilities[index - 1];
+                left += range * probabilities[index - 1];
                 DeleteSameDigits(ref left, ref right, code);
             }
 
-            code.Append(GetFirstDigitAfterDot(left) + 1);
+            int digit = GetFirstDigitAfterDot(left);
+            if (digit + 1 >= right)
+            {
+                do
+                {
+                    code.Append(digit);
+                    left = left * 10 - digit;
+                    digit = GetFirstDigitAfterDot(left);
+                } while (digit == 9);
+            }
+            code.Append(digit + 1);
             compressionRatio = (double)sourceText.Length * 4 / code.Length;
             code.Append(frequenciesCode);
             return code.ToString();
@@ -245,7 +252,5 @@ namespace DataCompressionAlgorithms
 
             return sourceText.ToString();
         }
-
     }
-
 }

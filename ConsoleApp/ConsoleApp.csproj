@@ -49,5 +49,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Data Compression Algorithms\Data Compression Algorithms.csproj">
+      <Project>{055b1a38-9b90-4c26-b6e1-ea50d9953b48}</Project>
+      <Name>Data Compression Algorithms</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

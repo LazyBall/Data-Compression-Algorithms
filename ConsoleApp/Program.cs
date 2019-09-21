@@ -10,9 +10,9 @@ namespace ConsoleApp
     {
         static void Main()
         {
-            //var message = "swiss_miss";
-            var message = ReadFromFile("WarAndWorld.txt");
-            message = message.Substring(message.Length - message.Length / 100000);
+            var message = "abcdefgh";
+            //var message = ReadFromFile("WarAndWorld.txt");
+            //message = message.Substring(message.Length - message.Length / 100000);
             //var message = ReadFromFile("test.txt");
             //message = message.Replace("\r\n", "\n");
             Console.WriteLine("Length: {0}", message.Length);
